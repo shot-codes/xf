@@ -1,0 +1,17 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "BROWSER=none turbo run dev --parallel",
+    "lint": "turbo run lint && cd apps/xf-server && pnpm run format",
+    "format": "prettier --write . && cd apps/xf-server-cube && pnpm run format"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "eslint-config-custom": "workspace:*",
+    "prettier": "^2.7.1",
+    "prettier-plugin-svelte": "^2.7.0",
+    "turbo": "latest"
+  },
+  "packageManager": "pnpm@7.15.0"
+}

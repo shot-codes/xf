@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "xf-server-cube"
+version = "0.1.0"
+description = ""
+authors = ["Nicolai <nicolai.verbaarschot@gmail.com>"]
+readme = "README.md"
+packages = [{include = "xf_server_cube"}]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.12"
+flask = "^2.2.2"
+flask-socketio = "^5.3.2"
+eventlet = "^0.33.2"
+
+
+[tool.poetry.group.dev.dependencies]
+poethepoet = "^0.16.4"
+black = "^22.10.0"
+flake8 = ">=4.0.1"
+flake8-bandit = ">=2.1.2"
+flake8-bugbear = ">=22.7.1"
+flake8-broken-line = ">=0.4.0"
+flake8-comprehensions = ">=3.10.0"
+pep8-naming = ">=0.13.0"
+pex = "^2.1.116"
+
+[tool.poe.tasks]
+_build_wheel="poetry build"
+_build_pex="pex dist/xf_server_cube*.whl -o dist/xf_server_cube.pex"
+build = ["_build_wheel", "_build_pex"]
+dev = "python xf_server_cube/app.py"
+format = "black ."
+lint = "flake8 --ignore=S105,S201,S104"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

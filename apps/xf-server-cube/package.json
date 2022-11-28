@@ -1,0 +1,12 @@
+{
+  "name": "xf-server-cube",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "postinstall": "poetry install",
+    "build": "poetry run poe build",
+    "dev": "poetry run poe dev",
+    "format": "poetry run poe format",
+    "lint": "poetry run poe lint"
+  }
+}
