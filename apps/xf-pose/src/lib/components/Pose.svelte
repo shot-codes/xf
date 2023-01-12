@@ -7,6 +7,9 @@
   import { GLTF } from "@threlte/extras";
   import { Vector3, type Object3D } from "three";
   import { Quaternion, Euler } from "three";
+  import { SphereGeometry } from "three";
+  import { MeshBasicMaterial } from "three";
+    import { Mesh } from "three";
 
   const options = {
     locateFile: (file: string) => {
@@ -20,6 +23,9 @@
 
   let u: Vector3;
   let hip: Vector3 | undefined;
+
+  const geometry = new SphereGeometry( 15, 32, 16 );
+  const material = new MeshBasicMaterial( { color: 0xffff00 } );
 
   $: {
     if (nodes) {
@@ -42,9 +48,15 @@
           leftarm.lookAt(u.add(hip));
         }
       }
+
+
+      const sphere = new Mesh( geometry, material );
+      nodes.Scene.add( sphere );
+
     } else {
       console.log("mo change");
     }
+
   }
 
   onMount(async () => {
