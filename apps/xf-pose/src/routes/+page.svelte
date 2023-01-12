@@ -3,7 +3,7 @@
 	import { spring } from 'svelte/motion';
 	import { degToRad } from 'three/src/math/MathUtils';
   import { GLTF } from '@threlte/extras';
-  import Character from '$lib/components/Character.svelte';
+  import Pose from "$lib/components/Pose.svelte";
 
 	const scale = spring(1);
 </script>
@@ -20,7 +20,10 @@
 		<T.DirectionalLight position={[-3, 10, -10]} intensity={0.2} />
 		<T.AmbientLight intensity={0.2} />
 
-    <Character />
+	<!-- svelte-ignore a11y-media-has-caption -->
+    <video id="video"></video>
+	
+	<Pose />
 
     <GLTF
       receiveShadow
