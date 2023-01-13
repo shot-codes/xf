@@ -30,6 +30,10 @@
   let poseResults: Results;
 
   let hip: Vector3 | undefined;
+  let u: Vector3 | undefined;
+  let v: Vector3 | undefined;
+  let w: Vector3 | undefined;
+  let x: Vector3 | undefined;
   let y: Vector3 | undefined;
   let uu: Vector3 | undefined;
   let vv: Vector3 | undefined;
@@ -40,12 +44,18 @@
   const material = new MeshBasicMaterial({ color: 0xffff00 });
 
   let la;
+  let base;
   let mesh;
+  let mesh2;
+  let target = new Vector3();
 
   $: {
     if (nodes) {
       mesh = new Mesh(geometry, material);
       nodes.Scene.add(mesh);
+
+      mesh2 = new Mesh(geometry, material);
+      nodes.Scene.add(mesh2);
     }
   }
 
@@ -58,65 +68,117 @@
       leftarm = nodes.Scene.getObjectByName("mixamorigLeftArm");
       leftelbow = nodes.Scene.getObjectByName("mixamorigLeftForeArm");
       lefthand = nodes.Scene.getObjectByName("mixamorigLeftHand");
-
       rightarm = nodes.Scene.getObjectByName("mixamorigRightArm");
       rightelbow = nodes.Scene.getObjectByName("mixamorigRightForeArm");
       righthand = nodes.Scene.getObjectByName("mixamorigRightHand");
-
       hip = nodes.Scene.getObjectByName("mixamorigHips")?.position;
       head = nodes.Scene.getObjectByName("mixamorigHead");
 
+      if (false) {
+        leftarm?.add(new AxesHelper(100));
+        leftelbow?.add(new AxesHelper(100));
+        lefthand?.add(new AxesHelper(100));
+        rightarm?.add(new AxesHelper(100));
+        rightelbow?.add(new AxesHelper(100));
+        righthand?.add(new AxesHelper(100));
+        head?.add(new AxesHelper(100));
+      }
+
       if (poseResults && hip) {
         if ("poseWorldLandmarks" in poseResults) {
-          
+          base = poseResults.poseWorldLandmarks[11];
           la = poseResults.poseWorldLandmarks[13];
+          rightarm?.getWorldPosition(target);
           uu = new Vector3(
-            hip.x / 100 - la.x,
-            hip.y / 100 - la.y,
-            hip.z / 100 - la.z
+            target.x - (la.x - base.x),
+            target.y - (la.y - base.y),
+            target.z - (la.z - base.z)
           );
           if (la.visibility > 0.3) {
             rightarm?.lookAt(uu.x, uu.y, uu.z);
-            rightarm?.rotateY(3.14 / 2);
+            rightarm?.rotateX(3.14 / 2);
           }
 
-          la = poseResults.poseWorldLandmarks[14];
-          vv = new Vector3(
-            hip.x / 100 - la.x,
-            hip.y / 100 - la.y,
-            hip.z / 100 - la.z
-          );
-          if (la.visibility > 0.3) {
-            leftarm?.lookAt(vv.x, vv.y, vv.z);
-            leftarm?.rotateY(-3.14 / 2);
-          }
-
+          base = poseResults.poseWorldLandmarks[13];
           la = poseResults.poseWorldLandmarks[15];
-          xx = new Vector3(
-            hip.x / 100 - la.x,
-            hip.y / 100 - la.y,
-            hip.z / 100 - la.z
+          rightelbow?.getWorldPosition(target);
+          vv = new Vector3(
+            target.x - (la.x - base.x),
+            target.y - (la.y - base.y),
+            target.z - (la.z - base.z)
           );
           if (la.visibility > 0.3) {
-            rightelbow?.lookAt(xx.x, xx.y, xx.z);
-            rightelbow?.rotateY(3.14 / 2);
+            rightelbow?.lookAt(vv.x, vv.y, vv.z);
+            rightelbow?.rotateX(3.14 / 2);
           }
 
+          base = poseResults.poseWorldLandmarks[12];
+          la = poseResults.poseWorldLandmarks[14];
+          leftarm?.getWorldPosition(target);
+          xx = new Vector3(
+            target.x - (la.x - base.x),
+            target.y - (la.y - base.y),
+            target.z - (la.z - base.z)
+          );
+          if (la.visibility > 0.3) {
+            leftarm?.lookAt(xx.x, xx.y, xx.z);
+            leftarm?.rotateX(3.14 / 2);
+          }
+
+          base = poseResults.poseWorldLandmarks[14];
           la = poseResults.poseWorldLandmarks[16];
+          leftelbow?.getWorldPosition(target);
           yy = new Vector3(
-            hip.x / 100 - la.x,
-            hip.y / 100 - la.y,
-            hip.z / 100 - la.z
+            target.x - (la.x - base.x),
+            target.y - (la.y - base.y),
+            target.z - (la.z - base.z)
           );
           if (la.visibility > 0.3) {
             leftelbow?.lookAt(yy.x, yy.y, yy.z);
-            leftelbow?.rotateY(-3.14 / 2);
+            leftelbow?.rotateX(3.14 / 2);
           }
 
-          mesh.position.x = yy.x;
-          mesh.position.y = yy.y;
-          mesh.position.z = yy.z;
-          console.log(hip, y, mesh)
+          if (false) {
+            //head?.lookAt(new Vector3(0.5,2,0.5))
+            mesh.position.x = 0.5;
+            mesh.position.y = 2;
+            mesh.position.z = 0.5;
+
+            const ley = poseResults.poseWorldLandmarks[6];
+            const rey = poseResults.poseWorldLandmarks[3];
+            const lmo = poseResults.poseWorldLandmarks[10];
+            const rmo = poseResults.poseWorldLandmarks[9];
+
+            const diag1 = new Vector3(
+              ley.x - rey.x,
+              ley.y - rey.y,
+              ley.z - rey.z
+            );
+            const diag2 = new Vector3(
+              rey.x + ley.x - rmo.x - lmo.x,
+              rey.y + ley.y - rmo.y - lmo.y,
+              rey.z + ley.z - rmo.z - lmo.z
+            );
+
+            const look = new Vector3(
+              diag1.y * diag2.z - diag1.z * diag2.y,
+              -diag1.x * diag2.z - diag1.z * diag2.x,
+              diag1.x * diag2.y - diag1.y * diag2.x
+            );
+            console.log("llll", diag2, diag1);
+            head?.lookAt(
+              new Vector3(-100 * look.x, -100 * look.y, 100 * look.z)
+            );
+
+            head?.getWorldPosition(target);
+            head?.rotateX(-3.14 / 2);
+
+            mesh2.position.x = target.x - 100 * look.x; // left
+            mesh2.position.y = target.y - 100 * look.y; // up
+            mesh2.position.z = target.z + 100 * look.z;
+
+            console.log(mesh2);
+          }
         }
       }
     } else {
@@ -160,7 +222,7 @@
         }
 
         async function onResults(results: Results) {
-          await new Promise((r) => setTimeout(r, 100));
+          await new Promise((r) => setTimeout(r, 50));
           sendData();
           poseResults = results;
           //console.log(results);
@@ -176,4 +238,4 @@
   });
 </script>
 
-<GLTF castShadow bind:nodes url="assets/Xbot.glb" />
+<GLTF castShadow bind:nodes url="assets/brute.glb" />
