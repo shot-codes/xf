@@ -24,7 +24,6 @@
 
   let node_pos;
   let child_pos;
-  let mesh;
 
   let target = new Vector3();
   let visibility;
@@ -33,8 +32,10 @@
     node_ids: number[];
     child_ids: number[];
     bone: Object3D<Event> | undefined;
-    excludeXrotation: boolean;
+    excludeYrotation: boolean;
   }[];
+  let debugSkeleton: Mesh<SphereGeometry, MeshBasicMaterial>[] = [];
+  let debug=true;
 
   $: {
     if (nodes) {
@@ -43,31 +44,31 @@
           node_ids: [11],
           child_ids: [13],
           bone: nodes.Scene.getObjectByName("mixamorigRightArm"),
-          excludeXrotation: false,
+          excludeYrotation: false,
         },
         {
           node_ids: [13],
           child_ids: [15],
           bone: nodes.Scene.getObjectByName("mixamorigRightForeArm"),
-          excludeXrotation: true,
+          excludeYrotation: true,
         },
         {
           node_ids: [12],
           child_ids: [14],
           bone: nodes.Scene.getObjectByName("mixamorigLeftArm"),
-          excludeXrotation: false,
+          excludeYrotation: false,
         },
         {
           node_ids: [14],
           child_ids: [16],
           bone: nodes.Scene.getObjectByName("mixamorigLeftForeArm"),
-          excludeXrotation: true,
+          excludeYrotation: true,
         },
         {
           node_ids: [23, 24],
           child_ids: [11, 12],
           bone: nodes.Scene.getObjectByName("mixamorigSpine"),
-          excludeXrotation: true,
+          excludeYrotation: true,
         },
       ];
     }
@@ -75,8 +76,11 @@
 
   $: {
     if (nodes) {
-      mesh = new Mesh(geometry, material);
-      nodes.Scene.add(mesh);
+      for (let i = 0; i <= 32; i++) {
+        const mesh = new Mesh(geometry, material);
+        nodes.Scene.add(mesh);
+        debugSkeleton.push(mesh);
+      }
     }
   }
 
@@ -127,11 +131,10 @@
             target.y - (child_pos.y - node_pos.y),
             target.z - (child_pos.z - node_pos.z)
           );
-          console.log(lookat_pos, visibility, sk.bone);
           if (visibility > 0.3) {
             const old_rot = sk.bone?.rotation.y;
             sk.bone?.lookAt(lookat_pos.x, lookat_pos.y, lookat_pos.z);
-            if (old_rot && sk.bone && sk.excludeXrotation) {
+            if (old_rot && sk.bone && sk.excludeYrotation) {
               sk.bone.rotation.z = old_rot;
             }
             sk.bone?.rotateX(3.14 / 2);
@@ -155,14 +158,20 @@
         );
 
         head?.getWorldPosition(target);
+        head?.lookAt(target.x + look.x, target.y + look.y, target.z + look.z);
 
-        if (false) {
-          mesh.position.x = target.x + look.x;
-          mesh.position.y = target.y + look.y;
-          mesh.position.z = target.z + look.z;
+        if (debug) {
+          for (const node_id in debugSkeleton) {
+            const mesh = debugSkeleton[node_id];
+            const node = poseResults.poseWorldLandmarks[node_id];
+            const hips = nodes.Scene.getObjectByName("mixamorigHips");
+            hips?.getWorldPosition(target);
+            mesh.position.x = target.x-node.x;
+            mesh.position.y = target.y-node.y;
+            mesh.position.z = target.z-node.z;
+          }
         }
 
-        head?.lookAt(target.x + look.x, target.y + look.y, target.z + look.z);
       }
     } else {
       console.log("mo change");
@@ -217,4 +226,4 @@
   });
 </script>
 
-<GLTF castShadow bind:nodes url="assets/diablo.glb" />
+<GLTF castShadow bind:nodes url="assets/brute.glb" />
