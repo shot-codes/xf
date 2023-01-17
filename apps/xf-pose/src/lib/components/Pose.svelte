@@ -27,6 +27,11 @@
 
   let target = new Vector3();
   let visibility;
+  let left;
+  let right;
+  let topDown = new Vector3(0, 1, 0);
+  let leftRight;
+  let look;
 
   let skeleton: {
     node_ids: number[];
@@ -35,7 +40,7 @@
     excludeYrotation: boolean;
   }[];
   let debugSkeleton: Mesh<SphereGeometry, MeshBasicMaterial>[] = [];
-  let debug=true;
+  let debug = true;
 
   $: {
     if (nodes) {
@@ -43,25 +48,25 @@
         {
           node_ids: [11],
           child_ids: [13],
-          bone: nodes.Scene.getObjectByName("mixamorigRightArm"),
-          excludeYrotation: false,
+          bone: nodes.Scene.getObjectByName("mixamorigLeftArm"),
+          excludeYrotation: true,
         },
         {
           node_ids: [13],
           child_ids: [15],
-          bone: nodes.Scene.getObjectByName("mixamorigRightForeArm"),
+          bone: nodes.Scene.getObjectByName("mixamorigLeftForeArm"),
           excludeYrotation: true,
         },
         {
           node_ids: [12],
           child_ids: [14],
-          bone: nodes.Scene.getObjectByName("mixamorigLeftArm"),
-          excludeYrotation: false,
+          bone: nodes.Scene.getObjectByName("mixamorigRightArm"),
+          excludeYrotation: true,
         },
         {
           node_ids: [14],
           child_ids: [16],
-          bone: nodes.Scene.getObjectByName("mixamorigLeftForeArm"),
+          bone: nodes.Scene.getObjectByName("mixamorigRightForeArm"),
           excludeYrotation: true,
         },
         {
@@ -127,7 +132,7 @@
 
           sk.bone?.getWorldPosition(target);
           lookat_pos = new Vector3(
-            target.x - (child_pos.x - node_pos.x),
+            target.x + (child_pos.x - node_pos.x),
             target.y - (child_pos.y - node_pos.y),
             target.z - (child_pos.z - node_pos.z)
           );
@@ -141,24 +146,44 @@
           }
         }
 
-        const left = poseResults.poseWorldLandmarks[7];
-        const right = poseResults.poseWorldLandmarks[8];
+        // head roatation
+        left = poseResults.poseWorldLandmarks[7];
+        right = poseResults.poseWorldLandmarks[8];
 
-        const leftRight = new Vector3(
+        leftRight = new Vector3(
           left.x - right.x,
           left.y - right.y,
           left.z - right.z
         ).normalize();
-        const topDown = new Vector3(0, 1, 0);
 
-        const look = new Vector3(
+        look = new Vector3(
           leftRight.y * topDown.z - leftRight.z * topDown.y,
           -leftRight.x * topDown.z - leftRight.z * topDown.x,
           leftRight.x * topDown.y - leftRight.y * topDown.x
         );
 
         head?.getWorldPosition(target);
-        head?.lookAt(target.x + look.x, target.y + look.y, target.z + look.z);
+        head?.lookAt(target.x - look.x, target.y + look.y, target.z + look.z);
+
+        // torso roatation
+        left = poseResults.poseWorldLandmarks[11];
+        right = poseResults.poseWorldLandmarks[12];
+
+        leftRight = new Vector3(
+          left.x - right.x,
+          left.y - right.y,
+          left.z - right.z
+        ).normalize();
+
+        look = new Vector3(
+          leftRight.y * topDown.z - leftRight.z * topDown.y,
+          -leftRight.x * topDown.z - leftRight.z * topDown.x,
+          leftRight.x * topDown.y - leftRight.y * topDown.x
+        );
+        console.log(look);
+        const root = nodes.Scene.getObjectByName("Armature");
+        //root.up = new Vector3(0,0,1);
+        root.rotation.z = Math.atan2(look.x, look.z);
 
         if (debug) {
           for (const node_id in debugSkeleton) {
@@ -166,12 +191,11 @@
             const node = poseResults.poseWorldLandmarks[node_id];
             const hips = nodes.Scene.getObjectByName("mixamorigHips");
             hips?.getWorldPosition(target);
-            mesh.position.x = target.x-node.x;
-            mesh.position.y = target.y-node.y;
-            mesh.position.z = target.z-node.z;
+            mesh.position.x = target.x + node.x;
+            mesh.position.y = target.y - node.y;
+            mesh.position.z = target.z - node.z;
           }
         }
-
       }
     } else {
       console.log("mo change");
