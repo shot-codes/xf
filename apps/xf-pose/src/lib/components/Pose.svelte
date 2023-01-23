@@ -3,7 +3,7 @@
   import { onMount } from "svelte";
 
   import { GLTF } from "@threlte/extras";
-  import { AxesHelper, Vector3, type Event, type Object3D } from "three";
+  import { AxesHelper, Group, SkinnedMesh, Vector3, type Event, type Object3D } from "three";
   import { SphereGeometry } from "three";
   import { MeshBasicMaterial, CylinderGeometry } from "three";
   import { Mesh } from "three";
@@ -20,7 +20,7 @@
   let lookat_pos: Vector3 | undefined;
 
   const geometry = new SphereGeometry(0.012, 32, 16);
-  const cylinderGeometry = new CylinderGeometry(0.01, 0.01, 0.3, 16);
+  const cylinderGeometry = new CylinderGeometry(0.03, 0.03, 1, 16);
   const material = new MeshBasicMaterial({ color: 0xffff00 });
   const cylinderMaterial = new MeshBasicMaterial({ color: "#bc4737" });
 
@@ -39,11 +39,7 @@
     child_ids: number[];
     bone: Object3D<Event> | undefined;
   }[];
-  let handSkeleton: {
-    node_id: number;
-    child_id: number;
-    mesh: Mesh<CylinderGeometry, MeshBasicMaterial>;
-  }[] = [];
+  let handSkeleton: { node_id: number; child_id: number; mesh: Group; }[] = [];
   let debugSkeleton: Mesh<SphereGeometry, MeshBasicMaterial>[] = [];
   let debugSkeletonHands: Mesh<SphereGeometry, MeshBasicMaterial>[] = [];
   let debug = true;
@@ -84,26 +80,35 @@
         {
           node_id: 0,
           child_id: 8,
-          mesh: new Mesh(cylinderGeometry, cylinderMaterial),
+          mesh: new Group(),
         },
         {
           node_id: 0,
           child_id: 12,
-          mesh: new Mesh(cylinderGeometry, cylinderMaterial),
+          mesh: new Group(),
         },
         {
           node_id: 0,
           child_id: 16,
-          mesh: new Mesh(cylinderGeometry, cylinderMaterial),
+          mesh: new Group(),
         },
         {
           node_id: 0,
           child_id: 20,
-          mesh: new Mesh(cylinderGeometry, cylinderMaterial),
+          mesh: new Group(),
+        },
+        {
+          node_id: 0,
+          child_id: 4,
+          mesh: new Group(),
         },
         
       ];
       for (const sk of handSkeleton) {
+        const mesh = new Mesh(cylinderGeometry, cylinderMaterial);
+        sk.mesh.add(mesh);
+        mesh.translateY(0.5);
+        
         nodes.Scene.add(sk.mesh);
       }
     }
@@ -223,6 +228,9 @@
             const hand = nodes.Scene.getObjectByName("mixamorigRightHand");
             hand?.getWorldPosition(target);
 
+            const scale = (new Vector3(node.x, node.y, node.z)).distanceTo(new Vector3(child.x, child.y, child.z));
+            mesh.scale.set(scale,scale,scale);
+            console.log(scale)
             mesh.position.x = target.x + (node.x-wrist.x);
             mesh.position.y = target.y - (node.y-wrist.y);
             mesh.position.z = target.z - (node.z-wrist.z);
@@ -232,6 +240,7 @@
               target.y - (child.y - node.y),
               target.z - (child.z - node.z)
             );
+
             mesh.lookAt(look);
             mesh.rotateX(3.14 / 2);
 
