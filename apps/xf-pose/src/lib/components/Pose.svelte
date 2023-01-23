@@ -19,8 +19,8 @@
   let poseResults: Results;
   let lookat_pos: Vector3 | undefined;
 
-  const geometry = new SphereGeometry(0.012, 32, 16);
-  const cylinderGeometry = new CylinderGeometry(0.03, 0.03, 1, 16);
+  const geometry = new SphereGeometry(0.02, 32, 16);
+  const cylinderGeometry = new CylinderGeometry(0.019, 0.019, 1, 16);
   const material = new MeshBasicMaterial({ color: 0xffff00 });
   const cylinderMaterial = new MeshBasicMaterial({ color: "#bc4737" });
 
@@ -79,27 +79,102 @@
       handSkeleton = [
         {
           node_id: 0,
+          child_id: 1,
+          mesh: new Group(),
+        },
+        {
+          node_id: 0,
+          child_id: 5,
+          mesh: new Group(),
+        },
+        {
+          node_id: 0,
+          child_id: 9,
+          mesh: new Group(),
+        },
+        {
+          node_id: 0,
+          child_id: 13,
+          mesh: new Group(),
+        },
+        {
+          node_id: 0,
+          child_id: 17,
+          mesh: new Group(),
+        },
+        {
+          node_id: 1,
+          child_id: 2,
+          mesh: new Group(),
+        },
+        {
+          node_id: 2,
+          child_id: 3,
+          mesh: new Group(),
+        },
+        {
+          node_id: 3,
+          child_id: 4,
+          mesh: new Group(),
+        },
+        {
+          node_id: 5,
+          child_id: 6,
+          mesh: new Group(),
+        },
+        {
+          node_id: 6,
+          child_id: 7,
+          mesh: new Group(),
+        },
+        {
+          node_id: 7,
           child_id: 8,
           mesh: new Group(),
         },
         {
-          node_id: 0,
+          node_id: 9,
+          child_id: 10,
+          mesh: new Group(),
+        },
+        {
+          node_id: 10,
+          child_id: 11,
+          mesh: new Group(),
+        },
+        {
+          node_id: 11,
           child_id: 12,
           mesh: new Group(),
         },
         {
-          node_id: 0,
+          node_id: 13,
+          child_id: 14,
+          mesh: new Group(),
+        },
+        {
+          node_id: 14,
+          child_id: 15,
+          mesh: new Group(),
+        },
+        {
+          node_id: 15,
           child_id: 16,
           mesh: new Group(),
         },
         {
-          node_id: 0,
-          child_id: 20,
+          node_id: 17,
+          child_id: 18,
           mesh: new Group(),
         },
         {
-          node_id: 0,
-          child_id: 4,
+          node_id: 18,
+          child_id: 19,
+          mesh: new Group(),
+        },
+        {
+          node_id: 19,
+          child_id: 20,
           mesh: new Group(),
         },
         
@@ -229,16 +304,16 @@
             hand?.getWorldPosition(target);
 
             const scale = (new Vector3(node.x, node.y, node.z)).distanceTo(new Vector3(child.x, child.y, child.z));
-            mesh.scale.set(scale,scale,scale);
+            mesh.scale.set(1,scale,1);
             console.log(scale)
             mesh.position.x = target.x + (node.x-wrist.x);
             mesh.position.y = target.y - (node.y-wrist.y);
             mesh.position.z = target.z - (node.z-wrist.z);
 
             look = new Vector3(
-              target.x + (child.x - node.x),
-              target.y - (child.y - node.y),
-              target.z - (child.z - node.z)
+              target.x + (child.x - wrist.x),
+              target.y - (child.y - wrist.y),
+              target.z - (child.z - wrist.z)
             );
 
             mesh.lookAt(look);
