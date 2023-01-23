@@ -3,17 +3,9 @@
   import { onMount } from "svelte";
 
   import { GLTF } from "@threlte/extras";
-  import {
-    AxesHelper,
-    Quaternion,
-    Vector3,
-    Matrix4,
-    type Event,
-    type Object3D,
-    Scene,
-  } from "three";
+  import { AxesHelper, Vector3, type Event, type Object3D } from "three";
   import { SphereGeometry } from "three";
-  import { MeshBasicMaterial } from "three";
+  import { MeshBasicMaterial, CylinderGeometry } from "three";
   import { Mesh } from "three";
 
   const options = {
@@ -27,8 +19,10 @@
   let poseResults: Results;
   let lookat_pos: Vector3 | undefined;
 
-  const geometry = new SphereGeometry(0.01, 32, 16);
+  const geometry = new SphereGeometry(0.012, 32, 16);
+  const cylinderGeometry = new CylinderGeometry(0.01, 0.01, 0.3, 16);
   const material = new MeshBasicMaterial({ color: 0xffff00 });
+  const cylinderMaterial = new MeshBasicMaterial({ color: "#bc4737" });
 
   let node_pos;
   let child_pos;
@@ -40,12 +34,16 @@
   let topDown = new Vector3(0, 1, 0);
   let leftRight;
   let look;
-  let R = 0;
   let skeleton: {
     node_ids: number[];
     child_ids: number[];
     bone: Object3D<Event> | undefined;
   }[];
+  let handSkeleton: {
+    node_id: number;
+    child_id: number;
+    mesh: Mesh<CylinderGeometry, MeshBasicMaterial>;
+  }[] = [];
   let debugSkeleton: Mesh<SphereGeometry, MeshBasicMaterial>[] = [];
   let debugSkeletonHands: Mesh<SphereGeometry, MeshBasicMaterial>[] = [];
   let debug = true;
@@ -79,6 +77,35 @@
           bone: nodes.Scene.getObjectByName("mixamorigSpine"),
         },
       ];
+      nodes.Scene.getObjectByName("mixamorigRightHand")?.scale.set(0, 0, 0);
+      nodes.Scene.getObjectByName("mixamorigLeftHand")?.scale.set(0, 0, 0);
+
+      handSkeleton = [
+        {
+          node_id: 0,
+          child_id: 8,
+          mesh: new Mesh(cylinderGeometry, cylinderMaterial),
+        },
+        {
+          node_id: 0,
+          child_id: 12,
+          mesh: new Mesh(cylinderGeometry, cylinderMaterial),
+        },
+        {
+          node_id: 0,
+          child_id: 16,
+          mesh: new Mesh(cylinderGeometry, cylinderMaterial),
+        },
+        {
+          node_id: 0,
+          child_id: 20,
+          mesh: new Mesh(cylinderGeometry, cylinderMaterial),
+        },
+        
+      ];
+      for (const sk of handSkeleton) {
+        nodes.Scene.add(sk.mesh);
+      }
     }
   }
 
@@ -186,37 +213,39 @@
         //root.up = new Vector3(0,0,1);
         root.rotation.z = Math.atan2(look.x, look.z);
 
-        if ("rightHandLandmarks" in poseResults && false) {
-          const pinky = poseResults["rightHandLandmarks"][20];
-          const thumb = poseResults["rightHandLandmarks"][4];
+        if ("rightHandLandmarks" in poseResults) {
+          for (const sk of handSkeleton) {
+            const wrist = poseResults.rightHandLandmarks[0];
+            const node = poseResults.rightHandLandmarks[sk.node_id];
+            const child = poseResults.rightHandLandmarks[sk.child_id];
+            const mesh = sk.mesh;
 
-          const ls = poseResults["poseLandmarks"][11];
-          const rs = poseResults["poseLandmarks"][23];
+            const hand = nodes.Scene.getObjectByName("mixamorigRightHand");
+            hand?.getWorldPosition(target);
 
-          const quaternion = new Quaternion();
-          const v1 = new Vector3(
-            rs.x - ls.x,
-            rs.y - ls.y,
-            rs.z - ls.z
-          ).normalize();
-          const v2 = new Vector3(
-            pinky.x - thumb.x,
-            pinky.y - thumb.y,
-            pinky.z - thumb.z
-          ).normalize();
+            mesh.position.x = target.x + (node.x-wrist.x);
+            mesh.position.y = target.y - (node.y-wrist.y);
+            mesh.position.z = target.z - (node.z-wrist.z);
 
-          quaternion.setFromUnitVectors(v1, v2);
-          nodes.Scene.getObjectByName(
-            "mixamorigRightHand"
-          )?.setRotationFromQuaternion(quaternion);
+            look = new Vector3(
+              target.x + (child.x - node.x),
+              target.y - (child.y - node.y),
+              target.z - (child.z - node.z)
+            );
+            mesh.lookAt(look);
+            mesh.rotateX(3.14 / 2);
+
+            console.log(mesh);
+          }
         }
+
         if (debug) {
           for (const node_id in debugSkeleton) {
             const mesh = debugSkeleton[node_id];
             const node = poseResults.ea[node_id];
             const hips = nodes.Scene.getObjectByName("mixamorigHips");
             hips?.getWorldPosition(target);
-            mesh.position.x = target.x + node.x;
+            mesh.position.x = 1 + target.x + node.x;
             mesh.position.y = target.y - node.y;
             mesh.position.z = target.z - node.z;
           }
@@ -228,11 +257,10 @@
           const lk = poseResults.rightHandLandmarks[5];
           const rk = poseResults.rightHandLandmarks[17];
           const hand = nodes.Scene.getObjectByName("mixamorigRightHand");
-          
+
           hand?.getWorldPosition(target);
 
           hand?.add(new AxesHelper(50));
-
 
           look = new Vector3(
             target.x + (node.x - wrist.x),
@@ -244,8 +272,6 @@
             target.y - (lk.y - rk.y),
             target.z - (lk.z - rk.z)
           );
-
- 
 
           for (const node_id in debugSkeletonHands) {
             const mesh = debugSkeletonHands[node_id];
