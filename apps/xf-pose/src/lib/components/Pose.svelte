@@ -215,7 +215,6 @@
           const hand = nodes.Scene.getObjectByName("mixamorigLeftHand");
           drawHand(poseResults.leftHandLandmarks, leftHandSkeleton, hand);
           drawHandJoints(poseResults.leftHandLandmarks, leftHandJoints, hand);
-
         }
 
         if (debug) {
