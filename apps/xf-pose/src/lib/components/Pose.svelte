@@ -27,8 +27,8 @@
   let poseResults: Results;
   let lookat_pos: Vector3 | undefined;
 
-  const geometry = new SphereGeometry(0.02, 32, 16);
-  const cylinderGeometry = new CylinderGeometry(0.019, 0.019, 1, 16);
+  const geometry = new SphereGeometry(0.015, 32, 16);
+  const cylinderGeometry = new CylinderGeometry(0.015, 0.015, 1, 16);
   const material = new MeshStandardMaterial({ color: 0xffff00 });
   const cylinderMaterial = new MeshStandardMaterial({ color: "#bc4737" });
 
@@ -48,11 +48,12 @@
     bone: Object3D<Event> | undefined;
   }[];
   let debugSkeleton: Mesh<SphereGeometry, MeshStandardMaterial>[] = [];
-  let debugSkeletonHands: Mesh<SphereGeometry, MeshStandardMaterial>[] = [];
+  let leftHandJoints: Mesh<SphereGeometry, MeshStandardMaterial>[] = [];
+  let rightHandJoints: Mesh<SphereGeometry, MeshStandardMaterial>[] = [];
   let debug = true;
 
   let rightHandSkeleton: { node_id: number; child_id: number; mesh: Group }[];
-  let leftHandSkeleton: { node_id: number; child_id: number; mesh: Group; }[];
+  let leftHandSkeleton: { node_id: number; child_id: number; mesh: Group }[];
 
   $: {
     if (nodes) {
@@ -104,9 +105,13 @@
       }
 
       for (let i = 0; i <= 20; i++) {
-        const mesh = new Mesh(geometry, material);
-        nodes.Scene.add(mesh);
-        debugSkeletonHands.push(mesh);
+        const meshLeft = new Mesh(geometry, material);
+        nodes.Scene.add(meshLeft);
+        leftHandJoints.push(meshLeft);
+
+        const meshRight = new Mesh(geometry, material);
+        nodes.Scene.add(meshRight);
+        rightHandJoints.push(meshRight);
       }
     }
   }
@@ -203,11 +208,14 @@
         if ("rightHandLandmarks" in poseResults) {
           const hand = nodes.Scene.getObjectByName("mixamorigRightHand");
           drawHand(poseResults.rightHandLandmarks, rightHandSkeleton, hand);
+          drawHandJoints(poseResults.rightHandLandmarks, rightHandJoints, hand);
         }
 
         if ("leftHandLandmarks" in poseResults) {
           const hand = nodes.Scene.getObjectByName("mixamorigLeftHand");
           drawHand(poseResults.leftHandLandmarks, leftHandSkeleton, hand);
+          drawHandJoints(poseResults.leftHandLandmarks, leftHandJoints, hand);
+
         }
 
         if (debug) {
@@ -221,47 +229,33 @@
             mesh.position.z = target.z - node.z;
           }
         }
-
-        if (debug && "rightHandLandmarks" in poseResults) {
-          const node = poseResults.rightHandLandmarks[9];
-          const wrist = poseResults.rightHandLandmarks[0];
-          const lk = poseResults.rightHandLandmarks[5];
-          const rk = poseResults.rightHandLandmarks[17];
-          const hand = nodes.Scene.getObjectByName("mixamorigRightHand");
-
-          hand?.getWorldPosition(target);
-
-          hand?.add(new AxesHelper(50));
-
-          look = new Vector3(
-            target.x + (node.x - wrist.x),
-            target.y - (node.y - wrist.y),
-            target.z - (node.z - wrist.z)
-          );
-          const up = new Vector3(
-            target.x + (lk.x - rk.x),
-            target.y - (lk.y - rk.y),
-            target.z - (lk.z - rk.z)
-          );
-
-          for (const node_id in debugSkeletonHands) {
-            const mesh = debugSkeletonHands[node_id];
-            const node = poseResults.rightHandLandmarks[node_id];
-            const wrist = poseResults.rightHandLandmarks[0];
-            const hand = nodes.Scene.getObjectByName("mixamorigRightHand");
-            hand?.getWorldPosition(target);
-            mesh.position.x = target.x + (node.x - wrist.x);
-            mesh.position.y = target.y - (node.y - wrist.y);
-            mesh.position.z = target.z - (node.z - wrist.z);
-          }
-        }
       }
     } else {
       console.log("no change");
     }
   }
 
-  function drawHand(handLandmarks: any[], handSkeleton: { node_id: number; child_id: number; mesh: Group; }[], hand: Object3D<Event> | undefined) {
+  function drawHandJoints(
+    handLandmarks: any[],
+    handJoints: Mesh<SphereGeometry, MeshStandardMaterial>[],
+    hand: Object3D<Event> | undefined
+  ) {
+    for (const node_id in leftHandJoints) {
+      const mesh = handJoints[node_id];
+      const node = handLandmarks[node_id];
+      const wrist = handLandmarks[0];
+      hand?.getWorldPosition(target);
+      mesh.position.x = target.x + (node.x - wrist.x);
+      mesh.position.y = target.y - (node.y - wrist.y);
+      mesh.position.z = target.z - (node.z - wrist.z);
+    }
+  }
+
+  function drawHand(
+    handLandmarks: any[],
+    handSkeleton: { node_id: number; child_id: number; mesh: Group }[],
+    hand: Object3D<Event> | undefined
+  ) {
     for (const sk of handSkeleton) {
       const wrist = handLandmarks[0];
       const node = handLandmarks[sk.node_id];
