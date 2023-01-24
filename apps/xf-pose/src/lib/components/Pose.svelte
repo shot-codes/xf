@@ -3,10 +3,18 @@
   import { onMount } from "svelte";
 
   import { GLTF } from "@threlte/extras";
-  import { AxesHelper, Group, SkinnedMesh, Vector3, type Event, type Object3D } from "three";
+  import {
+    AxesHelper,
+    Group,
+    SkinnedMesh,
+    Vector3,
+    type Event,
+    type Object3D,
+  } from "three";
   import { SphereGeometry } from "three";
   import { MeshBasicMaterial, CylinderGeometry } from "three";
   import { Mesh } from "three";
+  import { MeshStandardMaterial } from "three";
 
   const options = {
     locateFile: (file: string) => {
@@ -21,8 +29,8 @@
 
   const geometry = new SphereGeometry(0.02, 32, 16);
   const cylinderGeometry = new CylinderGeometry(0.019, 0.019, 1, 16);
-  const material = new MeshBasicMaterial({ color: 0xffff00 });
-  const cylinderMaterial = new MeshBasicMaterial({ color: "#bc4737" });
+  const material = new MeshStandardMaterial({ color: 0xffff00 });
+  const cylinderMaterial = new MeshStandardMaterial({ color: "#bc4737" });
 
   let node_pos;
   let child_pos;
@@ -39,10 +47,19 @@
     child_ids: number[];
     bone: Object3D<Event> | undefined;
   }[];
-  let handSkeleton: { node_id: number; child_id: number; mesh: Group; }[] = [];
-  let debugSkeleton: Mesh<SphereGeometry, MeshBasicMaterial>[] = [];
-  let debugSkeletonHands: Mesh<SphereGeometry, MeshBasicMaterial>[] = [];
+  let debugSkeleton: Mesh<SphereGeometry, MeshStandardMaterial>[] = [];
+  let debugSkeletonHands: Mesh<SphereGeometry, MeshStandardMaterial>[] = [];
   let debug = true;
+
+  let rightHandSkeleton: { node_id: number; child_id: number; mesh: Group }[];
+  let leftHandSkeleton: { node_id: number; child_id: number; mesh: Group; }[];
+
+  $: {
+    if (nodes) {
+      rightHandSkeleton = createHandMap();
+      leftHandSkeleton = createHandMap();
+    }
+  }
 
   $: {
     if (nodes) {
@@ -75,117 +92,6 @@
       ];
       nodes.Scene.getObjectByName("mixamorigRightHand")?.scale.set(0, 0, 0);
       nodes.Scene.getObjectByName("mixamorigLeftHand")?.scale.set(0, 0, 0);
-
-      handSkeleton = [
-        {
-          node_id: 0,
-          child_id: 1,
-          mesh: new Group(),
-        },
-        {
-          node_id: 0,
-          child_id: 5,
-          mesh: new Group(),
-        },
-        {
-          node_id: 0,
-          child_id: 9,
-          mesh: new Group(),
-        },
-        {
-          node_id: 0,
-          child_id: 13,
-          mesh: new Group(),
-        },
-        {
-          node_id: 0,
-          child_id: 17,
-          mesh: new Group(),
-        },
-        {
-          node_id: 1,
-          child_id: 2,
-          mesh: new Group(),
-        },
-        {
-          node_id: 2,
-          child_id: 3,
-          mesh: new Group(),
-        },
-        {
-          node_id: 3,
-          child_id: 4,
-          mesh: new Group(),
-        },
-        {
-          node_id: 5,
-          child_id: 6,
-          mesh: new Group(),
-        },
-        {
-          node_id: 6,
-          child_id: 7,
-          mesh: new Group(),
-        },
-        {
-          node_id: 7,
-          child_id: 8,
-          mesh: new Group(),
-        },
-        {
-          node_id: 9,
-          child_id: 10,
-          mesh: new Group(),
-        },
-        {
-          node_id: 10,
-          child_id: 11,
-          mesh: new Group(),
-        },
-        {
-          node_id: 11,
-          child_id: 12,
-          mesh: new Group(),
-        },
-        {
-          node_id: 13,
-          child_id: 14,
-          mesh: new Group(),
-        },
-        {
-          node_id: 14,
-          child_id: 15,
-          mesh: new Group(),
-        },
-        {
-          node_id: 15,
-          child_id: 16,
-          mesh: new Group(),
-        },
-        {
-          node_id: 17,
-          child_id: 18,
-          mesh: new Group(),
-        },
-        {
-          node_id: 18,
-          child_id: 19,
-          mesh: new Group(),
-        },
-        {
-          node_id: 19,
-          child_id: 20,
-          mesh: new Group(),
-        },
-        
-      ];
-      for (const sk of handSkeleton) {
-        const mesh = new Mesh(cylinderGeometry, cylinderMaterial);
-        sk.mesh.add(mesh);
-        mesh.translateY(0.5);
-        
-        nodes.Scene.add(sk.mesh);
-      }
     }
   }
 
@@ -293,34 +199,15 @@
         //root.up = new Vector3(0,0,1);
         root.rotation.z = Math.atan2(look.x, look.z);
 
+        // Hands
         if ("rightHandLandmarks" in poseResults) {
-          for (const sk of handSkeleton) {
-            const wrist = poseResults.rightHandLandmarks[0];
-            const node = poseResults.rightHandLandmarks[sk.node_id];
-            const child = poseResults.rightHandLandmarks[sk.child_id];
-            const mesh = sk.mesh;
+          const hand = nodes.Scene.getObjectByName("mixamorigRightHand");
+          drawHand(poseResults.rightHandLandmarks, rightHandSkeleton, hand);
+        }
 
-            const hand = nodes.Scene.getObjectByName("mixamorigRightHand");
-            hand?.getWorldPosition(target);
-
-            const scale = (new Vector3(node.x, node.y, node.z)).distanceTo(new Vector3(child.x, child.y, child.z));
-            mesh.scale.set(1,scale,1);
-            console.log(scale)
-            mesh.position.x = target.x + (node.x-wrist.x);
-            mesh.position.y = target.y - (node.y-wrist.y);
-            mesh.position.z = target.z - (node.z-wrist.z);
-
-            look = new Vector3(
-              target.x + (child.x - wrist.x),
-              target.y - (child.y - wrist.y),
-              target.z - (child.z - wrist.z)
-            );
-
-            mesh.lookAt(look);
-            mesh.rotateX(3.14 / 2);
-
-            console.log(mesh);
-          }
+        if ("leftHandLandmarks" in poseResults) {
+          const hand = nodes.Scene.getObjectByName("mixamorigLeftHand");
+          drawHand(poseResults.leftHandLandmarks, leftHandSkeleton, hand);
         }
 
         if (debug) {
@@ -370,8 +257,80 @@
         }
       }
     } else {
-      console.log("mo change");
+      console.log("no change");
     }
+  }
+
+  function drawHand(handLandmarks: any[], handSkeleton: { node_id: number; child_id: number; mesh: Group; }[], hand: Object3D<Event> | undefined) {
+    for (const sk of handSkeleton) {
+      const wrist = handLandmarks[0];
+      const node = handLandmarks[sk.node_id];
+      const child = handLandmarks[sk.child_id];
+      const mesh = sk.mesh;
+
+      hand?.getWorldPosition(target);
+
+      const scale = new Vector3(node.x, node.y, node.z).distanceTo(
+        new Vector3(child.x, child.y, child.z)
+      );
+      mesh.scale.set(1, scale, 1);
+      console.log(scale);
+      mesh.position.x = target.x + (node.x - wrist.x);
+      mesh.position.y = target.y - (node.y - wrist.y);
+      mesh.position.z = target.z - (node.z - wrist.z);
+
+      look = new Vector3(
+        target.x + (child.x - wrist.x),
+        target.y - (child.y - wrist.y),
+        target.z - (child.z - wrist.z)
+      );
+
+      mesh.lookAt(look);
+      mesh.rotateX(3.14 / 2);
+
+      console.log(mesh);
+    }
+  }
+
+  function createHandMap() {
+    const handLinks = [
+      [0, 1],
+      [0, 5],
+      [0, 9],
+      [0, 13],
+      [0, 17],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [5, 6],
+      [6, 7],
+      [7, 8],
+      [9, 10],
+      [10, 11],
+      [11, 12],
+      [13, 14],
+      [14, 15],
+      [15, 16],
+      [17, 18],
+      [18, 19],
+      [19, 20],
+    ];
+
+    const handSkeleton = [];
+    for (const link of handLinks) {
+      const group = new Group();
+      const mesh = new Mesh(cylinderGeometry, cylinderMaterial);
+      group.add(mesh);
+      mesh.translateY(0.5);
+      nodes.Scene.add(group);
+
+      handSkeleton.push({
+        node_id: link[0],
+        child_id: link[1],
+        mesh: group,
+      });
+    }
+    return handSkeleton;
   }
 
   onMount(async () => {
