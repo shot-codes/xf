@@ -5,7 +5,8 @@
     "dev": "BROWSER=none turbo run dev --parallel",
     "lint": "turbo run lint && cd apps/xf-server && pnpm run format",
     "format": "prettier --write . && cd apps/xf-server-cube && pnpm run format",
-    "dev-cube": "BROWSER=none turbo run dev --parallel --filter=xf-cube --filter=xf-senser-ws --filter=xf-server-cube",
+    "dev-cube": "BROWSER=none turbo run dev --parallel --filter=xf-cube --filter=xf-server-cube",
+    "dev-cube-fe": "BROWSER=none turbo run dev --parallel --filter=xf-cube",
     "dev-pose": "BROWSER=none turbo run dev --parallel --filter=xf-pose"
   },
   "devDependencies": {
